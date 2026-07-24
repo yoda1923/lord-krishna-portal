@@ -6,7 +6,7 @@ import ClassView from './ClassView';
 
 const SEED_STUDENTS = [];
 const SEED_FEES = {};
-const CLASSES = ["Pre-Nursery","Nursery","KG","Class I","Class II","Class III","Class IV","Class V","Class VI","Class VII","Class VIII","Class IX","Class X"];
+const CLASSES = ["Pre-Nursery","Nursery","KG","UKG","Class I","Class II","Class III","Class IV","Class V","Class VI","Class VII","Class VIII","Class IX","Class X"];
 
 const C = {
   navy:   "#1e3a8a",
