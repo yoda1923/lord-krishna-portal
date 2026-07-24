@@ -1,13 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { studentsAPI, feesAPI } from "./api";
-
 const C = {
   navy: "#1e3a8a", gold: "#d97706", white: "#ffffff",
   bg: "#f0f4ff", card: "#ffffff", text: "#0f172a",
   muted: "#64748b", green: "#16a34a", red: "#dc2626", border: "#e2e8f0",
 };
 
-const CLASSES = ["Pre-Nursery","Nursery","KG","Class I","Class II","Class III","Class IV","Class V","Class VI","Class VII","Class VIII","Class IX","Class X"];
+const CLASSES = ["Pre-Nursery","Nursery","KG","UKG","Class I","Class II","Class III","Class IV","Class V","Class VI","Class VII","Class VIII","Class IX","Class X"];
 const CASTE_OPTIONS = ["General", "OBC", "SC", "ST", "EWS"];
 
 function Avatar({ name, photo, size = 40 }) {
@@ -111,6 +110,22 @@ export default function ClassView({ className, students, setStudents, fees, setF
   const [confirmDel, setConfirmDel] = useState(null);
   const [saving, setSaving] = useState(false);
 
+  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const [feeMonth, setFeeMonth] = useState(new Date().toLocaleString("default", { month: "long" }));
+  const [receipts, setReceipts] = useState([]);
+
+  useEffect(() => {
+    feesAPI.getAllReceipts()
+      .then(res => setReceipts(res.data))
+      .catch(e => console.error("Failed to load receipts for fee status:", e));
+  }, []);
+
+  const getFeeStatus = (studentId) => {
+    const studentReceipts = receipts.filter(r => r.student_id === studentId && r.fee_type === "Tuition Fee");
+    const paidForMonth = studentReceipts.some(r => (r.months || "").split(",").includes(feeMonth));
+    return paidForMonth ? "Paid" : "Unpaid";
+  };
+
   const classStudents = students.filter(s => s.class === className);
   const filtered = classStudents.filter(s =>
     s.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -175,7 +190,10 @@ export default function ClassView({ className, students, setStudents, fees, setF
           <h2 style={{ fontSize: 22, color: C.navy, fontWeight: 700, margin: 0 }}>🎓 {className}</h2>
           <div style={{ fontSize: 13, color: C.muted, marginTop: 4 }}>{classStudents.length} students enrolled</div>
         </div>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+          <select value={feeMonth} onChange={e => setFeeMonth(e.target.value)} style={{ border: `1.5px solid ${C.border}`, borderRadius: 8, padding: "8px 14px", fontSize: 14, fontFamily: "inherit", background: C.white }}>
+            {MONTHS.map(m => <option key={m}>{m}</option>)}
+          </select>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Search by name or roll" style={{ border: `1.5px solid ${C.border}`, borderRadius: 8, padding: "8px 14px", fontSize: 14, width: 240, fontFamily: "inherit" }} />
           <Btn variant="gold" onClick={() => setModal("add")}>➕ Add Student</Btn>
         </div>
@@ -195,8 +213,15 @@ export default function ClassView({ className, students, setStudents, fees, setF
                   {s.father_name && `👨 ${s.father_name}`} {s.caste && `· ${s.caste}`} {s.dob && `· 🎂 ${s.dob}`}
                 </div>
               </div>
-              <div style={{ fontSize: 12 }}>
+              <div style={{ fontSize: 12, display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end" }}>
                 {due > 0 ? <span style={{ color: C.red, fontWeight: 600 }}>Due: ₹{due.toLocaleString("en-IN")}</span> : <span style={{ color: C.green, fontWeight: 600 }}>Fees Clear</span>}
+                <span style={{
+                  fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 20,
+                  background: getFeeStatus(s.id) === "Paid" ? "#dcfce7" : "#fee2e2",
+                  color: getFeeStatus(s.id) === "Paid" ? "#15803d" : "#b91c1c",
+                }}>
+                  {feeMonth}: {getFeeStatus(s.id)}
+                </span>
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <Btn small variant="outline" onClick={() => setModal({
